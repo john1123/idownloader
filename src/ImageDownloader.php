@@ -3,16 +3,16 @@ namespace John1123\ImageDownloader;
 
 class ImageDownloader
 {
-    const ALLOW_OWERWRITING = true;
     protected $filesToDownload;
     protected $filesLocalDirectory = './files/';
-    protected $allowedExtenstions = array(
-        'jpg', 'png', 'gif',
+    protected $isAllowOverwrite = true;
+    protected $allowedExtensions = array(
+        'gif', 'jpg', 'png'
     );
 
-    public function __construct($filesToDownload = array())
+    public function __construct($allowOverwrite = true)
     {
-        $this->setFilesToDownload($filesToDownload);
+        $this->setOverwriteMode($allowOverwrite);
     }
 
     /**
@@ -31,38 +31,67 @@ class ImageDownloader
     }
 
     /**
+     * Функция определяет перезаписываль ли файл, если скачиваемый файл уже есть.
+     *
+     * @param boolean $allowOverwrite - Разрешить/запретить перезапись
+     * @throws \Exception
+     */
+    public function setOverwriteMode($allowOverwrite)
+    {
+        if (is_bool($allowOverwrite)) {
+            $this->isAllowOverwrite = $allowOverwrite;
+        } else {
+            throw new \Exception('Wrong paraneter type');
+        }
+    }
+
+    /**
      * Функция загружает файлы
      *
      * @throws \Exception
      */
-    public function download()
+    public function download($filesToDownload = array())
     {
+        if (count($filesToDownload) > 0) {
+            $this->setFilesToDownload($filesToDownload);
+        }
         if (count($this->filesToDownload) < 1) {
             throw new \Exception('Empty download list');
         }
-        if (is_writable($this->filesLocalDirectory)  == false) {
+        if (is_writable($this->filesLocalDirectory) === false) {
             throw new \Exception('Directory `' . $this->filesLocalDirectory . '` isn`t writeable');
         }
-        //
-        $notCopiedCounter = 0;
+        $successfullCopiedCounter = 0;
         foreach ($this->filesToDownload as $linkToFile) {
-            $filename = substr(strrchr($linkToFile, '/'), 1);
+            $pathinfo = pathinfo($linkToFile);
+            $filename = $pathinfo['basename'];
+            if (in_array($pathinfo['extension'], $this->allowedExtensions) === false) {
+                continue;
+            }
+            //$filename = substr(strrchr($linkToFile, '/'), 1);
             if (file_exists($this->filesLocalDirectory . $filename)) {
-                if (self::ALLOW_OWERWRITING == false) {
-                    $notCopiedCounter += 1;
+                if ($this->isAllowOverwrite === false) {
                     continue;
                 }
             }
-            if(copy($linkToFile, $this->filesLocalDirectory . $filename) == false) {
-                $notCopiedCounter += 1;
+            $localFilename = $this->filesLocalDirectory . $filename;
+            if(copy($linkToFile, $localFilename) === false) {
+                continue;
             }
+            // Проверка имени файла через getimagesize
+            // $info = getimagesize($localFilename);
+            // if ($info === false || in_array($info[2], array(IMAGETYPE_GIF, IMAGETYPE_JPEG, IMAGETYPE_PNG)) == false) {
+            //     unlink($localFilename);
+            //     continue;
+            // }
+            $successfullCopiedCounter += 1;
         }
 
-        if ($notCopiedCounter > 0) {
-            throw new \Exception('Unable to download ' . $notCopiedCounter . 'file(s)');
+        if ($successfullCopiedCounter < count($this->filesToDownload)) {
+            $notDownloaded = count($this->filesToDownload) - $successfullCopiedCounter;
+            throw new \Exception('Unable to download ' . $notDownloaded . ' file(s)');
         }
         return true;
-        //
     }
 }
 
