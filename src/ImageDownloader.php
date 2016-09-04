@@ -4,15 +4,36 @@ namespace John1123\ImageDownloader;
 class ImageDownloader
 {
     protected $filesToDownload;
-    protected $filesLocalDirectory = './files/';
+    protected $filesLocalDirectory;
     protected $isAllowOverwrite = true;
     protected $allowedExtensions = array(
         'gif', 'jpg', 'png'
     );
 
-    public function __construct($allowOverwrite = true)
+    public function __construct($filesLocalDirectory = '', $allowOverwrite = true)
     {
-        $this->setOverwriteMode($allowOverwrite);
+        $this->init($filesLocalDirectory, $allowOverwrite);
+    }
+
+    /**
+     * Инициализация
+     *
+     * @param string $filesLocalDirectory - имя локальной папки куда будут загружаться файлы
+     * @param bool $isOverwrite - разрешена/запрещена перезапись существующих файлов
+     * @throws \Exception
+     */
+    protected function init($filesLocalDirectory = '', $isOverwrite = true)
+    {
+        if(function_exists('getimagesize') === false) {
+            throw new \Exception('GD extension isn`t enabled');
+        }
+
+        $this->setFilesLocalDirectory($filesLocalDirectory);
+        if (is_writable($this->filesLocalDirectory) === false) {
+            throw new \Exception('Directory `' . $this->filesLocalDirectory . '`. is absent or isn`t writeable');
+        }
+
+        $this->setOverwriteMode($isOverwrite);
     }
 
     /**
@@ -31,15 +52,30 @@ class ImageDownloader
     }
 
     /**
-     * Функция определяет перезаписываль ли файл, если скачиваемый файл уже есть.
+     * Функция устанавливает имя локальной папки куда будут загружаться файлы
      *
-     * @param boolean $allowOverwrite - Разрешить/запретить перезапись
+     * @param string $filesLocalDirectory - имя локальной папки куда будут загружаться файлы
      * @throws \Exception
      */
-    public function setOverwriteMode($allowOverwrite)
+    public function setFilesLocalDirectory($filesLocalDirectory)
     {
-        if (is_bool($allowOverwrite)) {
-            $this->isAllowOverwrite = $allowOverwrite;
+        if (is_string($filesLocalDirectory)) {
+            $this->filesLocalDirectory = $filesLocalDirectory;
+        } else {
+            throw new \Exception('Wrong paraneter type');
+        }
+    }
+
+    /**
+     * Функция определяет перезаписываль ли файл, если скачиваемый файл уже есть.
+     *
+     * @param boolean $isOverwrite - разрешена/запрещена перезапись существующих файлов
+     * @throws \Exception
+     */
+    public function setOverwriteMode($isOverwrite)
+    {
+        if (is_bool($isOverwrite)) {
+            $this->isAllowOverwrite = $isOverwrite;
         } else {
             throw new \Exception('Wrong paraneter type');
         }
@@ -58,9 +94,7 @@ class ImageDownloader
         if (count($this->filesToDownload) < 1) {
             throw new \Exception('Empty download list');
         }
-        if (is_writable($this->filesLocalDirectory) === false) {
-            throw new \Exception('Directory `' . $this->filesLocalDirectory . '` isn`t writeable');
-        }
+
         $successfullCopiedCounter = 0;
         foreach ($this->filesToDownload as $linkToFile) {
             $pathinfo = pathinfo($linkToFile);
