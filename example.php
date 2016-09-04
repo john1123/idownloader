@@ -14,8 +14,8 @@
 //    }
 //  ]
 //}
-//
-// PS don`t forfet to create ./files folder :)
+
+// PS don`t forget to create ./files folder :)
 
 require_once 'vendor/autoload.php';
 
