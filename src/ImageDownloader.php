@@ -78,12 +78,11 @@ class ImageDownloader
             if(copy($linkToFile, $localFilename) === false) {
                 continue;
             }
-            // Проверка имени файла через getimagesize
-            // $info = getimagesize($localFilename);
-            // if ($info === false || in_array($info[2], array(IMAGETYPE_GIF, IMAGETYPE_JPEG, IMAGETYPE_PNG)) == false) {
-            //     unlink($localFilename);
-            //     continue;
-            // }
+            $info = getimagesize($localFilename);
+            if ($info === false/* || in_array($info[2], array(IMAGETYPE_GIF, IMAGETYPE_JPEG, IMAGETYPE_PNG)) == false */) {
+                unlink($localFilename);
+                continue;
+            }
             $successfullCopiedCounter += 1;
         }
 
