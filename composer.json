@@ -1,5 +1,5 @@
 {
-    "name":"john1123/idownloader",
+    "name":"john1123/imagedownloader",
     "version":"1.0.0",
     "require":{
         "php":">=5.3.0"
